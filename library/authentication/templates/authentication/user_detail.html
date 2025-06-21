@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}{{ user_profile.get_full_name|default:user_profile.email }} - User Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'authentication:user_list' %}">Users</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ user_profile.get_full_name|default:user_profile.email }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'authentication:user_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Users
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-person-circle" style="font-size: 5rem; color: #6c757d;"></i>
+                    </div>
+                    <h4>{{ user_profile.get_full_name|default:user_profile.email }}</h4>
+                    <span class="badge {% if user_profile|is_librarian %}bg-primary{% else %}bg-secondary{% endif %} mb-2">
+                        {{ user_profile.role|get_role_display }}
+                    </span>
+                    
+                    <div class="mt-2">
+                        <span class="badge {% if user_profile.is_active %}bg-success{% else %}bg-danger{% endif %} me-1">
+                            {% if user_profile.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                        <span class="badge bg-info">
+                            Member since {{ user_profile.date_joined|date:"M d, Y" }}
+                        </span>
+                    </div>
+                    
+                    {% if user_profile.last_login %}
+                    <div class="mt-2 small text-muted">
+                        Last login: {{ user_profile.last_login|timesince }} ago
+                    </div>
+                    {% else %}
+                    <div class="mt-2 small text-muted">
+                        Never logged in
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- User Actions Card -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">User Actions</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'authentication:user_detail' user_profile.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="role" class="form-label">User Role</label>
+                            <select class="form-select" id="role" name="role" {% if user_profile == request.user and user_profile|is_librarian %}disabled{% endif %}>
+                                {% for role in role_choices %}
+                                    <option value="{{ role.value }}" {% if role.value == user_profile.role %}selected{% endif %} {% if user_profile == request.user and user_profile|is_librarian and role.value == 1 %}selected{% endif %}>
+                                        {{ role.label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if user_profile == request.user and user_profile|is_librarian %}
+                                <input type="hidden" name="role" value="{{ CustomUser.ROLE_LIBRARIAN }}">
+                                <div class="form-text text-muted">You cannot change your own role.</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if user_profile.is_active %}checked{% endif %} {% if user_profile == request.user %}disabled{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                Account is {% if not user_profile.is_active %}in{% endif %}active
+                                {% if user_profile == request.user %}
+                                    <span class="badge bg-info ms-2">Your account</span>
+                                {% endif %}
+                            </label>
+                            <div class="form-text">
+                                Inactive users cannot log in to the system.
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" {% if user_profile == request.user and not user_profile.is_active %}disabled{% endif %}>
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                            {% if user_profile.is_active %}
+                                <a href="#" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deactivateModal">
+                                    <i class="bi bi-person-x me-1"></i> Deactivate Account
+                                </a>
+                            {% else %}
+                                <button type="submit" name="activate" value="1" class="btn btn-outline-success">
+                                    <i class="bi bi-person-check me-1"></i> Activate Account
+                                </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#profile">
+                                <i class="bi bi-person-lines-fill me-1"></i> Profile
+                            </a>
+                        </li>
+                        {% if user_profile.role == 0 %}
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#orders">
+                                <i class="bi bi-journal-bookmark me-1"></i> Borrowing History
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content">
+                        <!-- Profile Tab -->
+                        <div class="tab-pane fade show active" id="profile">
+                            <h5 class="card-title mb-4">User Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-1">First Name</h6>
+                                        <p class="mb-3">{{ user_profile.first_name|default:"Not provided" }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-1">Last Name</h6>
+                                        <p class="mb-3">{{ user_profile.last_name|default:"Not provided" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-1">Email Address</h6>
+                                <p class="mb-3">
+                                    {{ user_profile.email }}
+                                    {% if user_profile.is_superuser %}
+                                        <span class="badge bg-warning text-dark ms-2">Superuser</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-1">Account Status</h6>
+                                        <p class="mb-3">
+                                            <span class="badge {% if user_profile.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                                {% if user_profile.is_active %}Active{% else %}Inactive{% endif %}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-1">User Role</h6>
+                                        <p class="mb-3">
+                                            <span class="badge {% if user_profile.role == 1 %}bg-primary{% else %}bg-secondary{% endif %}">
+                                                {{ role_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-1">Date Joined</h6>
+                                        <p class="mb-3">{{ user_profile.date_joined|date:"F j, Y" }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-1">Last Login</h6>
+                                        <p class="mb-3">
+                                            {% if user_profile.last_login %}
+                                                {{ user_profile.last_login|timesince }} ago
+                                            {% else %}
+                                                Never
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if user_profile.middle_name %}
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-1">Middle Name</h6>
+                                <p class="mb-0">{{ user_profile.middle_name }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Orders Tab (for visitors) -->
+                        {% if user_profile.role == 0 %}
+                        <div class="tab-pane fade" id="orders">
+                            <h5 class="card-title mb-4">Borrowing History</h5>
+                            
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Borrowing history will be displayed here when implemented.
+                            </div>
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Book</th>
+                                                <th>Borrowed On</th>
+                                                <th>Due Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in orders %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'book:book_detail' order.book.id %}">
+                                                        {{ order.book.name }}
+                                                    </a>
+                                                </td>
+                                                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                                <td>{{ order.plated_end_at|date:"M d, Y" }}</td>
+                                                <td>
+                                                    {% if order.end_at %}
+                                                        <span class="badge bg-secondary">Returned</span>
+                                                    {% elif order.is_overdue %}
+                                                        <span class="badge bg-danger">Overdue</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success">Borrowed</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    No borrowing history found.
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Deactivate User Modal -->
+    <div class="modal fade" id="deactivateModal" tabindex="-1" aria-labelledby="deactivateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="deactivateModalLabel">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deactivation
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to deactivate this user account?</p>
+                    <p class="mb-0"><strong>{{ user_profile.get_full_name|default:user_profile.email }}</strong> will no longer be able to log in to the system.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i> Cancel
+                    </button>
+                    <form method="post" action="{% url 'authentication:user_detail' user_profile.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="is_active" value="0">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-person-x me-1"></i> Deactivate Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Handle tab state in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const activeTab = urlParams.get('tab');
+        if (activeTab) {
+            const tabTrigger = document.querySelector(`[data-bs-target="#${activeTab}"]`);
+            if (tabTrigger) {
+                new bootstrap.Tab(tabTrigger).show();
+            }
+        }
+    });
+    
+    // Update URL when tabs are shown
+    document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function (e) {
+            const tabId = e.target.getAttribute('data-bs-target').substring(1);
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabId);
+            window.history.pushState({}, '', url);
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

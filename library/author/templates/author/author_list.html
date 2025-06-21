@@ -1,0 +1,535 @@
+{% extends 'author/base_author.html' %}
+
+{% block title %}Authors - Library Management{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'author:author_list' %}">Authors</a>
+    </li>
+{% endblock %}
+
+{% block action_buttons %}
+    <div class="d-flex">
+        <div class="input-group me-3" style="max-width: 300px;">
+            <form method="get" class="d-flex w-100" id="searchForm">
+                <input type="text" 
+                       class="form-control form-control-sm" 
+                       placeholder="Search authors..." 
+                       name="q" 
+                       value="{{ request.GET.q }}"
+                       aria-label="Search authors">
+                <button class="btn btn-outline-secondary" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+                {% if request.GET.q %}
+                    <a href="{% url 'author:author_list' %}" class="btn btn-outline-secondary" title="Clear search">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-plus-lg me-1"></i> Add Author
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a class="dropdown-item" href="{% url 'author:author_create' %}">
+                        <i class="bi bi-person-plus me-2"></i>Add New Author
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#quickAddAuthorModal">
+                        <i class="bi bi-lightning me-2"></i>Quick Add
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .author-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+    }
+    .author-name {
+        font-weight: 500;
+        color: #212529;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .author-name:hover {
+        color: #0d6efd;
+    }
+    .book-count {
+        min-width: 30px;
+        text-align: center;
+    }
+    .action-buttons .btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .table-hover tbody tr {
+        transition: background-color 0.15s;
+    }
+    .empty-state {
+        padding: 3rem 1.5rem;
+    }
+    .empty-state-icon {
+        font-size: 3.5rem;
+        opacity: 0.2;
+        margin-bottom: 1rem;
+    }
+    .empty-state-title {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    .empty-state-text {
+        color: #6c757d;
+        max-width: 400px;
+        margin: 0 auto 1.5rem;
+    }
+    .pagination .page-link {
+        min-width: 40px;
+        text-align: center;
+    }
+    /* Fix for lint error - add missing semicolon */
+    .table-loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+{% block author_content %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-people-fill me-2 text-primary"></i>Authors
+                    {% if search_query %}
+                        <span class="text-muted fw-normal">({{ paginator.count }} result{{ paginator.count|pluralize }} found)</span>
+                    {% endif %}
+                </h5>
+                {% if is_paginated %}
+                    <div class="text-muted small">
+                        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ paginator.count }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card-body p-0 position-relative">
+            <!-- Loading indicator -->
+            <div class="loading-indicator d-none position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75" style="z-index: 10;">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mb-0">Loading authors...</p>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3" style="width: 45%;">Author</th>
+                            <th class="text-center" style="width: 15%;">Books</th>
+                            <th style="width: 25%;">Last Updated</th>
+                            <th class="text-end pe-3" style="width: 15%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="authorsTableBody">
+                        {% include 'author/includes/author_table.html' %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <nav class="px-3 py-2 border-top pagination-container">
+                    {% include 'author/includes/pagination.html' %}
+                </nav>
+            {% endif %}
+            
+            {% if not authors %}
+                <div class="empty-state text-center py-5">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h4 class="empty-state-title">No authors found</h4>
+                    <p class="empty-state-text">
+                        {% if request.GET.q %}
+                            No authors match your search criteria. Try a different search term.
+                        {% else %}
+                            There are no authors in the library yet. Add your first author to get started.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'author:author_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Add Author
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+//<![CDATA[
+// This is a CDATA section to prevent XML parsing errors in JavaScript
+// Initialize tooltips and other page elements
+(function() {
+    'use strict';
+    
+    // Initialize tooltips
+    function initTooltips() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+    
+    // Debounce function for search input
+    function debounce(func, wait) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(function() {
+                func.apply(context, args);
+            }, wait);
+        };
+    }
+    
+    // Initialize page elements
+    function initPage() {
+        initTooltips();
+        
+        // Auto-dismiss alerts after 5 seconds
+        var alertList = document.querySelectorAll('.alert-dismissible');
+        alertList.forEach(function (alert) {
+            setTimeout(function() {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+        
+        // Handle search form submission with debounce
+        var searchForm = document.getElementById('searchForm');
+        if (searchForm) {
+            var searchInput = searchForm.querySelector('input[name="q"]');
+            
+            // Handle form submission
+            searchForm.addEventListener('submit', function(e) {
+                if (searchInput && searchInput.value.trim() === '') {
+                    e.preventDefault();
+                    window.location.href = "{% url 'author:author_list' %}";
+                }
+            });
+            
+            // Handle search input with debounce
+            if (searchInput) {
+                searchInput.addEventListener('input', debounce(function() {
+                    if (searchInput.value.length === 0 || searchInput.value.length >= 2) {
+                        searchForm.requestSubmit();
+                    }
+                }, 500));
+            }
+        }
+        
+        // Handle AJAX pagination
+        document.addEventListener('click', function(e) {
+            var paginationLink = e.target.closest('.page-link');
+            if (paginationLink && !e.target.closest('.disabled')) {
+                e.preventDefault();
+                var url = paginationLink.href;
+                if (url) {
+                    loadPage(url);
+                    history.pushState({}, '', url);
+                }
+            }
+        });
+        
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', function() {
+            loadPage(window.location.href);
+        });
+    }
+    
+    // AJAX form submission for quick add author
+    function handleQuickAddAuthor() {
+        var quickAddForm = document.getElementById('quickAddAuthorForm');
+        if (!quickAddForm) return;
+        
+        quickAddForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(quickAddForm);
+            var submitBtn = quickAddForm.querySelector('button[type="submit"]');
+            var originalBtnText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...';
+            
+            fetch(quickAddForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    return response.json().then(function(err) { 
+                        throw new Error(err.message || 'Failed to add author'); 
+                    });
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.success) {
+                    // Show success message
+                    var alertHtml = [
+                        '<div class="alert alert-success alert-dismissible fade show" role="alert">',
+                        '    <i class="bi bi-check-circle-fill me-2"></i>',
+                        '    ' + data.message,
+                        '    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+                        '</div>'
+                    ].join('\n');
+                    
+                    // Insert alert before the form
+                    quickAddForm.insertAdjacentHTML('beforebegin', alertHtml);
+                    
+                    // Reset form
+                    quickAddForm.reset();
+                    
+                    // Close modal
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('quickAddAuthorModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Reload the page to show the new author
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message || 'Failed to add author');
+                }
+            })
+            .catch(function(error) {
+                var errorMessage = error.message || 'An error occurred while adding the author';
+                var alertHtml = [
+                    '<div class="alert alert-danger alert-dismissible fade show" role="alert">',
+                    '    <i class="bi bi-exclamation-triangle-fill me-2"></i>',
+                    '    ' + errorMessage,
+                    '    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+                    '</div>'
+                ].join('\n');
+                
+                // Insert error alert before the form
+                quickAddForm.insertAdjacentHTML('afterbegin', alertHtml);
+            })
+            .finally(function() {
+                // Reset button state
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            });
+        });
+    }
+    
+    // Function to handle pagination and search
+    function handlePagination() {
+        document.addEventListener('click', function(e) {
+            // Handle pagination clicks
+            var paginationLink = e.target.closest('.page-link');
+            if (paginationLink && !e.target.closest('.disabled')) {
+                e.preventDefault();
+                var url = paginationLink.href;
+                if (url) {
+                    loadAuthors(url);
+                }
+            }
+        });
+        
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', function(e) {
+            if (e.state && e.state.url) {
+                loadAuthors(e.state.url, false);
+            }
+        });
+    }
+    
+    // Function to load authors via AJAX
+    function loadAuthors(url, pushState) {
+        pushState = pushState !== undefined ? pushState : true;
+        
+        var loadingIndicator = document.querySelector('.loading-indicator');
+        var authorsTable = document.getElementById('authorsTableBody');
+        var paginationContainer = document.querySelector('.pagination-container');
+        
+        if (!loadingIndicator || !authorsTable || !paginationContainer) {
+            return;
+        }
+        
+        // Show loading state
+        loadingIndicator.classList.remove('d-none');
+        authorsTable.classList.add('table-loading');
+        
+        // Update URL without page reload
+        if (pushState) {
+            window.history.pushState({ url: url }, '', url);
+        }
+        
+        // Make AJAX request
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            // Update table body
+            if (data.html && authorsTable) {
+                authorsTable.innerHTML = data.html;
+            }
+            
+            // Update pagination
+            if (data.pagination_html && paginationContainer) {
+                paginationContainer.innerHTML = data.pagination_html;
+            }
+            
+            // Update URL in browser's address bar without reloading the page
+            try {
+                var newUrl = new URL(url, window.location.origin);
+                var params = new URLSearchParams(newUrl.search);
+                
+                // Update page title if needed
+                document.title = params.has('q') 
+                    ? 'Search: ' + params.get('q') + ' - Authors | Library Management' 
+                    : 'Authors | Library Management';
+            } catch (e) {
+                console.error('Error updating URL:', e);
+            }
+        })
+        .catch(function(error) {
+            console.error('Error loading authors:', error);
+            alert('An error occurred while loading authors. Please try again.');
+        })
+        .finally(function() {
+            // Hide loading state
+            if (loadingIndicator) {
+                loadingIndicator.classList.add('d-none');
+            }
+            if (authorsTable) {
+                authorsTable.classList.remove('table-loading');
+            }
+            
+            // Re-initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function(tooltipTriggerEl) {
+                new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    }
+    
+    // Initialize all functionality
+    function init() {
+        initPage();
+        handleQuickAddAuthor();
+        handlePagination();
+    }
+    
+    // Initialize when DOM is loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+//]]>
+</script>
+
+<!-- Quick Add Author Modal -->
+<div class="modal fade" id="quickAddAuthorModal" tabindex="-1" aria-labelledby="quickAddAuthorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddAuthorModalLabel">
+                    <i class="bi bi-lightning me-2"></i>Quick Add Author
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickAddAuthorForm" method="post" action="{% url 'author:author_quick_add' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="quickName" class="form-label">First Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="quickName" name="name" required 
+                               pattern="[A-Za-zА-Яа-яҐґЄєІіЇї\s\-']+" 
+                               title="Only letters, spaces, hyphens, and apostrophes are allowed"
+                               autocomplete="off" autofocus>
+                        <div class="invalid-feedback">Please provide a valid first name.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickSurname" class="form-label">Last Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="quickSurname" name="surname" required
+                               pattern="[A-Za-zА-Яа-яҐґЄєІіЇї\s\-']+" 
+                               title="Only letters, spaces, hyphens, and apostrophes are allowed"
+                               autocomplete="off">
+                        <div class="invalid-feedback">Please provide a valid last name.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickPatronymic" class="form-label">Middle Name</label>
+                        <input type="text" class="form-control" id="quickPatronymic" name="patronymic"
+                               pattern="[A-Za-zА-Яа-яҐґЄєІіЇї\s\-']*" 
+                               title="Only letters, spaces, hyphens, and apostrophes are allowed"
+                               autocomplete="off">
+                        <div class="form-text">Optional</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <i class="bi bi-check-lg me-1"></i> Save Author
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts container for dynamic messages -->
+<div class="alerts-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    <!-- Alerts will be inserted here by JavaScript -->
+</div>
+{% endblock %}

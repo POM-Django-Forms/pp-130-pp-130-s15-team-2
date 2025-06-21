@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .author-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #6c757d;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 12px;
+    }
+    .author-name {
+        display: flex;
+        align-items: center;
+    }
+    .table-hover tbody tr {
+        transition: all 0.2s;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: translateX(4px);
+    }
+    .page-title {
+        position: relative;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    .page-title:after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 50px;
+        height: 3px;
+        background: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'author:author_list' %}">Authors</a></li>
+            {% block breadcrumb %}{% endblock %}
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="page-title">
+            <i class="bi {% block title_icon %}bi-people-fill{% endblock %} me-2"></i>
+            {% block title %}Author Management{% endblock %}
+        </h2>
+        <div class="d-flex">
+            {% block action_buttons %}
+            <button type="button" class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#quickAddAuthorModal">
+                <i class="bi bi-plus-circle me-1"></i> Quick Add
+            </button>
+            <a href="{% url 'author:author_create' %}" class="btn btn-primary">
+                <i class="bi bi-person-plus me-1"></i> Add Author
+            </a>
+            {% endblock %}
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% block author_content %}{% endblock %}
+</div>
+
+<!-- Quick Add Author Modal -->
+<div class="modal fade" id="quickAddAuthorModal" tabindex="-1" aria-labelledby="quickAddAuthorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddAuthorModalLabel">Quick Add Author</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickAuthorForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="quickName" class="form-label">First Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="quickName" name="name" required>
+                        <div class="invalid-feedback">Please provide a first name.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickSurname" class="form-label">Last Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="quickSurname" name="surname" required>
+                        <div class="invalid-feedback">Please provide a last name.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickPatronymic" class="form-label">Middle Name</label>
+                        <input type="text" class="form-control" id="quickPatronymic" name="patronymic">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveQuickAuthor">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    Save Author
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Quick add author form handling
+    const quickAuthorForm = document.getElementById('quickAuthorForm');
+    const saveBtn = document.getElementById('saveQuickAuthor');
+    const modal = new bootstrap.Modal(document.getElementById('quickAddAuthorModal'));
+    
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            const name = document.getElementById('quickName')?.value.trim();
+            const surname = document.getElementById('quickSurname')?.value.trim();
+            const patronymic = document.getElementById('quickPatronymic')?.value.trim();
+            
+            // Basic validation
+            if (!name || !surname) {
+                quickAuthorForm?.classList.add('was-validated');
+                return;
+            }
+            
+            // Show loading state
+            const spinner = saveBtn.querySelector('.spinner-border');
+            spinner?.classList.remove('d-none');
+            saveBtn.disabled = true;
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('surname', surname);
+            if (patronymic) formData.append('patronymic', patronymic);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            
+            // Send AJAX request
+            fetch('{% url "author:author_quick_add" %}', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Show success message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alert.role = 'alert';
+                alert.innerHTML = `
+                    Author ${data.full_name} has been added successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                
+                // Insert alert before the content
+                const container = document.querySelector('.container.mt-4');
+                if (container) {
+                    const firstChild = container.firstElementChild;
+                    container.insertBefore(alert, firstChild);
+                }
+                
+                // Close modal and reset form
+                modal.hide();
+                quickAuthorForm?.reset();
+                quickAuthorForm?.classList.remove('was-validated');
+                
+                // Reload the page after a short delay to show the new author
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            })
+            .catch(error => {
+                // Show error message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                alert.role = 'alert';
+                alert.innerHTML = `
+                    Error: ${error.message || 'Failed to add author'}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                
+                // Insert alert in the modal or main content
+                const modalBody = document.querySelector('.modal-body');
+                if (modalBody) {
+                    modalBody.insertBefore(alert, modalBody.firstChild);
+                    // Scroll to top to show error
+                    modalBody.scrollTo(0, 0);
+                } else {
+                    const container = document.querySelector('.container.mt-4');
+                    if (container) {
+                        const firstChild = container.firstElementChild;
+                        container.insertBefore(alert, firstChild);
+                    }
+                }
+            })
+            .finally(() => {
+                // Reset button state
+                if (spinner) spinner.classList.add('d-none');
+                saveBtn.disabled = false;
+            });
+        });
+    }
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Handle modal hidden event to reset form
+    const quickAddModal = document.getElementById('quickAddAuthorModal');
+    if (quickAddModal) {
+        quickAddModal.addEventListener('hidden.bs.modal', function () {
+            if (quickAuthorForm) {
+                quickAuthorForm.reset();
+                quickAuthorForm.classList.remove('was-validated');
+            }
+            
+            // Remove any existing alerts
+            const alerts = quickAddModal.querySelectorAll('.alert');
+            alerts.forEach(alert => alert.remove());
+        });
+    }
+});
+</script>
+{% endblock %}

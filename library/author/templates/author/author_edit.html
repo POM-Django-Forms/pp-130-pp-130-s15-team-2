@@ -1,0 +1,279 @@
+{% extends 'author/base_author.html' %}
+
+{% block title %}Edit Author: {{ author.get_full_name }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'author:author_list' %}">Authors</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Edit Author</li>
+{% endblock %}
+
+{% block action_buttons %}
+    <a href="{% url 'author:author_list' %}" class="btn btn-outline-secondary me-2">
+        <i class="bi bi-arrow-left me-1"></i> Back to List
+    </a>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .form-control:focus, .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+    .form-label {
+        font-weight: 500;
+    }
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .form-text {
+        font-size: 0.8rem;
+    }
+    .author-avatar {
+        width: 120px;
+        height: 120px;
+        background-color: #f8f9fa;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #6c757d;
+        margin: 0 auto 1.5rem;
+        border: 3px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block author_content %}
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% elif message.tags == 'danger' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil-square text-primary me-2"></i>Edit Author
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="author-avatar">
+                            {{ author.name|first|upper }}{{ author.surname|first|upper }}
+                        </div>
+                        <h4>{{ author.get_full_name }}</h4>
+                        <p class="text-muted mb-0">
+                            {% if author.books.exists %}
+                                {{ author.books.count }} book{{ author.books.count|pluralize }}
+                            {% else %}
+                                No books yet
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <label for="name" class="form-label required-field">
+                                    <i class="bi bi-person-fill me-1 text-muted"></i>First Name
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg {% if messages and not name and name != '' %}is-invalid{% endif %}" 
+                                       id="name" 
+                                       name="name" 
+                                       value="{{ name|default:author.name }}" 
+                                       required
+                                       pattern="[A-Za-z\s-]+"
+                                       title="Please enter a valid name (letters, spaces, and hyphens only)">
+                                <div class="invalid-feedback">
+                                    Please provide a valid first name (letters, spaces, and hyphens only).
+                                </div>
+                                <div class="form-text">Author's first name (required)</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <label for="surname" class="form-label required-field">
+                                    <i class="bi bi-person-vcard me-1 text-muted"></i>Last Name
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg {% if messages and not surname and surname != '' %}is-invalid{% endif %}" 
+                                       id="surname" 
+                                       name="surname" 
+                                       value="{{ surname|default:author.surname }}" 
+                                       required
+                                       pattern="[A-Za-z\s-]+"
+                                       title="Please enter a valid last name (letters, spaces, and hyphens only)">
+                                <div class="invalid-feedback">
+                                    Please provide a valid last name (letters, spaces, and hyphens only).
+                                </div>
+                                <div class="form-text">Author's last name (required)</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="patronymic" class="form-label">
+                                    <i class="bi bi-person-lines-fill me-1 text-muted"></i>Middle Name
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg" 
+                                       id="patronymic" 
+                                       name="patronymic" 
+                                       value="{{ patronymic|default:author.patronymic|default:'' }}"
+                                       pattern="[A-Za-z\s-]*"
+                                       title="Please enter a valid middle name (letters, spaces, and hyphens only)">
+                                <div class="form-text">Author's middle name (optional)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                            <div>
+                                <a href="{% url 'author:author_list' %}" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-x-lg me-1"></i> Cancel
+                                </a>
+                                <a href="#deleteAuthorModal" 
+                                   class="btn btn-outline-danger" 
+                                   data-bs-toggle="modal" 
+                                   data-bs-target="#deleteAuthorModal"
+                                   {% if author.books.exists %}disabled title="Cannot delete author with associated books"{% endif %}>
+                                    <i class="bi bi-trash me-1"></i> Delete
+                                </a>
+                            </div>
+                            
+                            <div class="btn-group" role="group">
+                                <button type="submit" name="save_and_continue" class="btn btn-outline-primary">
+                                    <i class="bi bi-save me-1"></i> Save & Continue
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg me-1"></i> Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if not author.books.exists %}
+                <!-- Delete Author Modal -->
+                <div class="modal fade" id="deleteAuthorModal" tabindex="-1" aria-labelledby="deleteAuthorModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title" id="deleteAuthorModalLabel">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deletion
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete the author <strong>{{ author.get_full_name }}</strong>?</p>
+                                <p class="mb-0">This action cannot be undone.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-lg me-1"></i> Cancel
+                                </button>
+                                <form method="post" action="{% url 'author:author_delete' author.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash me-1"></i> Delete Author
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if author.books.exists %}
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-book me-2 text-primary"></i>Author's Books
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>ISBN</th>
+                                        <th>Publication Year</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for book in author.books.all %}
+                                        <tr>
+                                            <td>
+                                                <a href="#" class="text-decoration-none">{{ book.title }}</a>
+                                            </td>
+                                            <td>{{ book.isbn|default:"-" }}</td>
+                                            <td>{{ book.publication_year|default:"-" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enable form validation with Bootstrap
+(function () {
+    'use strict';
+    
+    // Fetch all forms that need validation
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    // Loop over them and prevent submission if invalid
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
+    // Auto-capitalize first letter of each word in name fields
+    const nameFields = document.querySelectorAll('input[name="name"], input[name="surname"], input[name="patronymic"]');
+    nameFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            if (this.value) {
+                this.value = this.value.toLowerCase()
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ')
+                    .split('-')
+                    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                    .join('-');
+            }
+        });
+    });
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+})();
+</script>
+{% endblock %}

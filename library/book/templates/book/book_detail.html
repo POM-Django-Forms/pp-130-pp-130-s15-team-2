@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ book.name }} - Library{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'book:book_list' %}">Books</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ book.name }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h1 class="mb-0">{{ book.name }}</h1>
+                {% if user.is_authenticated and user.is_librarian %}
+                    <a href="{% url 'book:book_edit' book.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit Book
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-muted">
+                    By 
+                    {% for author in book.authors.all %}
+                        {{ author.name }} {{ author.surname }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+                
+                <div class="mb-3">
+                    <span class="badge {% if book.count > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                        {% if book.count > 0 %}{{ book.count }} available{% else %}Out of stock{% endif %}
+                    </span>
+                </div>
+                
+                <h4>Description</h4>
+                <p class="lead">{{ book.description }}</p>
+            </div>
+            
+            {% if user.is_authenticated %}
+                <div class="d-flex gap-2">
+                    {% if book.count > 0 %}
+                        <form action="{% url 'order:create_order' %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="book_id" value="{{ book.id }}">
+                            <button type="submit" class="btn btn-primary">Borrow This Book</button>
+                        </form>
+                    {% endif %}
+                    <a href="{% url 'book:book_list' %}" class="btn btn-outline-secondary">Back to Books</a>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <a href="{% url 'authentication:login' %}?next={{ request.path }}" class="alert-link">Sign in</a> to borrow this book.
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="d-flex justify-content-center align-items-center" style="min-height: 500px; background-color: #f8f9fa; padding: 2rem;">
+                    {% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" class="img-fluid" alt="{{ book.name }} cover" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                    {% else %}
+                        <div class="text-center">
+                            <i class="bi bi-book" style="font-size: 8rem; color: #6c757d;"></i>
+                            <p class="text-muted mt-3">No cover image available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Book Details</h5>
+                    <dl class="row">
+                        <dt class="col-sm-5">ID:</dt>
+                        <dd class="col-sm-7">{{ book.id }}</dd>
+                        
+                        <dt class="col-sm-5">Available Copies:</dt>
+                        <dd class="col-sm-7">{{ book.count }}</dd>
+                        
+                        <dt class="col-sm-5">Authors:</dt>
+                        <dd class="col-sm-7">
+                            {% for author in book.authors.all %}
+                                {{ author.name }} {{ author.surname }}<br>
+                            {% endfor %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

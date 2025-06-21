@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}User Management - Library{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-people-fill me-2"></i>User Management</h2>
+        <a href="{% url 'authentication:profile' %}" class="btn btn-outline-primary">
+            <i class="bi bi-person-circle me-1"></i>My Profile
+        </a>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search by name or email..." 
+                               value="{{ search_query|default:'' }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'authentication:user_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'authentication:user_detail' user.id %}" class="text-decoration-none">
+                                    {{ user.get_full_name|default:user.email }}
+                                </a>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge {% if user.role == user.ROLE_LIBRARIAN %}bg-primary{% else %}bg-secondary{% endif %}">
+                                    {{ user.get_role_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span data-bs-toggle="tooltip" title="{{ user.date_joined|date:'F j, Y H:i' }}">
+                                    {{ user.date_joined|date:"M d, Y" }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'authentication:user_detail' user.id %}" class="btn btn-sm btn-outline-primary"
+                                       data-bs-toggle="tooltip" data-bs-placement="top" title="View details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if user.is_active %}
+                                        <a href="{% url 'authentication:user_detail' user.id %}" class="btn btn-sm btn-outline-danger"
+                                           data-bs-toggle="tooltip" data-bs-placement="top" title="Deactivate user">
+                                            <i class="bi bi-person-x"></i>
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'authentication:user_detail' user.id %}" class="btn btn-sm btn-outline-success"
+                                           data-bs-toggle="tooltip" data-bs-placement="top" title="Activate user">
+                                            <i class="bi bi-person-check"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="bi bi-people-x fs-1 text-muted"></i>
+                                <p class="mt-2 mb-0">No users found</p>
+                                {% if search_query %}
+                                    <a href="{% url 'authentication:user_list' %}" class="btn btn-sm btn-outline-secondary mt-2">
+                                        Clear search
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if is_paginated %}
+    <nav aria-label="User pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" 
+                       aria-label="First" data-bs-toggle="tooltip" title="First page">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" 
+                       aria-label="Previous" data-bs-toggle="tooltip" title="Previous">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" 
+                       aria-label="Next" data-bs-toggle="tooltip" title="Next">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}" 
+                       aria-label="Last" data-bs-toggle="tooltip" title="Last page">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
+                </li>
+            {% endif %}
+        </ul>
+        <div class="text-center text-muted mt-2">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} users
+        </div>
+    </nav>
+{% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Enable tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

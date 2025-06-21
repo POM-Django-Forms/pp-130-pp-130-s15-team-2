@@ -1,0 +1,73 @@
+{% for author in authors %}
+    <tr>
+        <td class="ps-3">
+            <div class="d-flex align-items-center">
+                <div class="author-avatar me-3">
+                    {{ author.name|first|upper }}{{ author.surname|first|upper }}
+                </div>
+                <div>
+                    <a href="{% url 'author:author_detail' author.id %}" class="author-name text-decoration-none">
+                        {{ author.get_full_name }}
+                    </a>
+                    {% if author.patronymic %}
+                        <div class="text-muted small">{{ author.patronymic }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </td>
+        <td class="text-center">
+            {% if author.books.exists %}
+                <a href="{% url 'author:author_detail' author.id %}" class="badge bg-primary bg-opacity-10 text-primary text-decoration-none">
+                    {{ author.books.count }} book{{ author.books.count|pluralize }}
+                </a>
+            {% else %}
+                <span class="badge bg-secondary bg-opacity-10 text-secondary">No books</span>
+            {% endif %}
+        </td>
+        <td>
+            <span class="text-muted" data-bs-toggle="tooltip" title="{{ author.updated_at|date:'F j, Y H:i' }}">
+                {{ author.updated_at|timesince }} ago
+            </span>
+        </td>
+        <td class="text-end pe-3">
+            <div class="action-buttons">
+                <a href="{% url 'author:author_detail' author.id %}" class="btn btn-sm btn-outline-primary" 
+                   data-bs-toggle="tooltip" title="View details">
+                    <i class="bi bi-eye"></i>
+                </a>
+                <a href="{% url 'author:author_edit' author.id %}" class="btn btn-sm btn-outline-secondary"
+                   data-bs-toggle="tooltip" title="Edit author">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        data-bs-toggle="modal" data-bs-target="#deleteAuthorModal{{ author.id }}"
+                        {% if author.books.exists %}disabled{% endif %}
+                        data-bs-toggle="tooltip" 
+                        title="{% if author.books.exists %}Cannot delete author with books{% else %}Delete author{% endif %}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </td>
+    </tr>
+{% empty %}
+    <tr>
+        <td colspan="4" class="text-center py-4">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-search"></i>
+                </div>
+                <h4 class="empty-state-title">No authors found</h4>
+                <p class="empty-state-text">
+                    {% if search_query %}
+                        No authors match your search criteria. Try a different search term.
+                    {% else %}
+                        There are no authors in the library yet.
+                    {% endif %}
+                </p>
+                <a href="{% url 'author:author_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Add Author
+                </a>
+            </div>
+        </td>
+    </tr>
+{% endfor %}

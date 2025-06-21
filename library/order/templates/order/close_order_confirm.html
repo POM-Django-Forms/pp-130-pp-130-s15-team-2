@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Return - Library{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h2 class="h5 mb-0">Confirm Book Return</h2>
+                </div>
+                <div class="card-body">
+                    <p>Are you sure you want to mark this book as returned?</p>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ order.book.name }}</h5>
+                            <p class="card-text text-muted">
+                                Borrowed by: {{ order.user.email }}<br>
+                                Borrowed on: {{ order.created_at|date:"M d, Y" }}<br>
+                                Due date: {{ order.plated_end_at|date:"M d, Y" }}
+                            </p>
+                            {% if order.plated_end_at < timezone.now %}
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    This book is overdue by {{ timezone.now|timeuntil:order.plated_end_at }}.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Confirm Return
+                        </button>
+                        <a href="{% url 'order:all_orders' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

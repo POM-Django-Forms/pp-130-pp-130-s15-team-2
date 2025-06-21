@@ -1,0 +1,192 @@
+{% extends 'author/base_author.html' %}
+
+{% block title %}Add New Author{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'author:author_list' %}">Authors</a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">Add New Author</li>
+{% endblock %}
+
+{% block action_buttons %}
+    <a href="{% url 'author:author_list' %}" class="btn btn-outline-secondary me-2">
+        <i class="bi bi-arrow-left me-1"></i> Back to List
+    </a>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .form-control:focus, .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+    .form-label {
+        font-weight: 500;
+    }
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    .form-text {
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block author_content %}
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                        <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% elif message.tags == 'danger' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-plus-fill text-primary me-2"></i>Add New Author
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <label for="name" class="form-label required-field">
+                                    <i class="bi bi-person-fill me-1 text-muted"></i>First Name
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg {% if messages and not name and name != '' %}is-invalid{% endif %}" 
+                                       id="name" 
+                                       name="name" 
+                                       value="{{ name|default:'' }}" 
+                                       required
+                                       pattern="[A-Za-z\s-]+"
+                                       title="Please enter a valid name (letters, spaces, and hyphens only)">
+                                <div class="invalid-feedback">
+                                    Please provide a valid first name (letters, spaces, and hyphens only).
+                                </div>
+                                <div class="form-text">Author's first name (required)</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <label for="surname" class="form-label required-field">
+                                    <i class="bi bi-person-vcard me-1 text-muted"></i>Last Name
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg {% if messages and not surname and surname != '' %}is-invalid{% endif %}" 
+                                       id="surname" 
+                                       name="surname" 
+                                       value="{{ surname|default:'' }}" 
+                                       required
+                                       pattern="[A-Za-z\s-]+"
+                                       title="Please enter a valid last name (letters, spaces, and hyphens only)">
+                                <div class="invalid-feedback">
+                                    Please provide a valid last name (letters, spaces, and hyphens only).
+                                </div>
+                                <div class="form-text">Author's last name (required)</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="patronymic" class="form-label">
+                                    <i class="bi bi-person-lines-fill me-1 text-muted"></i>Middle Name
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg" 
+                                       id="patronymic" 
+                                       name="patronymic" 
+                                       value="{{ patronymic|default:'' }}"
+                                       pattern="[A-Za-z\s-]*"
+                                       title="Please enter a valid middle name (letters, spaces, and hyphens only)">
+                                <div class="form-text">Author's middle name (optional)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                            <a href="{% url 'author:author_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i> Cancel
+                            </a>
+                            
+                            <div class="btn-group" role="group">
+                                <button type="submit" name="save_and_add_another" class="btn btn-outline-primary">
+                                    <i class="bi bi-plus-circle me-1"></i> Save & Add Another
+                                </button>
+                                <button type="submit" name="save_and_edit" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil me-1"></i> Save & Edit
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-1"></i> Save Author
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-4">
+                <div class="d-flex">
+                    <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+                    <div>
+                        <h6 class="alert-heading mb-2">About Adding Authors</h6>
+                        <ul class="mb-0 ps-3">
+                            <li>First and last names are required fields</li>
+                            <li>Only letters, spaces, and hyphens are allowed in names</li>
+                            <li>Names will be automatically capitalized</li>
+                            <li>You can add books to this author after creation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enable form validation with Bootstrap
+(function () {
+    'use strict';
+    
+    // Fetch all forms that need validation
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    // Loop over them and prevent submission
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
+    // Add input event listeners for real-time validation
+    const nameInput = document.getElementById('name');
+    const surnameInput = document.getElementById('surname');
+    
+    [nameInput, surnameInput].forEach(input => {
+        if (input) {
+            input.addEventListener('input', function() {
+                if (this.checkValidity()) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                }
+            });
+        }
+    });
+})();
+</script>
+{% endblock %}

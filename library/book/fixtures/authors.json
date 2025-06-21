@@ -1,0 +1,38 @@
+[
+  {
+    "model": "author.author",
+    "pk": 1,
+    "fields": {
+      "name": "George",
+      "surname": "Orwell",
+      "patronymic": ""
+    }
+  },
+  {
+    "model": "author.author",
+    "pk": 2,
+    "fields": {
+      "name": "J.R.R.",
+      "surname": "Tolkien",
+      "patronymic": ""
+    }
+  },
+  {
+    "model": "author.author",
+    "pk": 3,
+    "fields": {
+      "name": "Harper",
+      "surname": "Lee",
+      "patronymic": ""
+    }
+  },
+  {
+    "model": "author.author",
+    "pk": 4,
+    "fields": {
+      "name": "F. Scott",
+      "surname": "Fitzgerald",
+      "patronymic": ""
+    }
+  }
+]

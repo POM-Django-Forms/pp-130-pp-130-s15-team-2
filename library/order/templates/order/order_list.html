@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if my_orders %}My Orders{% else %}All Active Orders{% endif %} - Library{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% if my_orders %}My Borrowed Books{% else %}Active Orders{% endif %}</h1>
+        <a href="{% url 'book:book_list' %}" class="btn btn-outline-primary">Back to Books</a>
+    </div>
+
+    {% if all_orders %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-10">
+                        <input type="number" name="user_id" class="form-control" placeholder="Filter by User ID" value="{{ selected_user|default:'' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if orders %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        {% if all_orders %}<th>User</th>{% endif %}
+                        <th>Book</th>
+                        <th>Borrowed Date</th>
+                        <th>Due Date</th>
+                        {% if all_orders %}<th>Actions</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            {% if all_orders %}
+                                <td>
+                                    {{ order.user.email }}
+                                    <span class="text-muted d-block small">ID: {{ order.user.id }}</span>
+                                </td>
+                            {% endif %}
+                            <td>
+                                <a href="{% url 'book:book_detail' order.book.id %}">{{ order.book.name }}</a>
+                                <div class="text-muted small">
+                                    {% for author in order.book.authors.all %}
+                                        {{ author.name }} {{ author.surname }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="{% if order.plated_end_at < timezone.now and not order.end_at %}text-danger fw-bold{% endif %}">
+                                    {{ order.plated_end_at|date:"M d, Y" }}
+                                    {% if order.plated_end_at < timezone.now and not order.end_at %}(Overdue){% endif %}
+                                </span>
+                            </td>
+                            {% if all_orders %}
+                                <td>
+                                    <form action="{% url 'order:close_order' order.id %}" method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success" 
+                                                onclick="return confirm('Mark this book as returned?')">
+                                            Returned
+                                        </button>
+                                    </form>
+<a href="{% url 'order:user_books' order.user.id %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-book"></i> User's Books
+                                    </a>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            {% if my_orders %}
+                You don't have any active book borrowings.
+                <a href="{% url 'book:book_list' %}" class="alert-link">Browse our collection</a> to find something to read!
+            {% else %}
+                No active orders found.
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

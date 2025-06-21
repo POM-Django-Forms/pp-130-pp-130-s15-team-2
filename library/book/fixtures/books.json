@@ -1,0 +1,65 @@
+[
+  {
+    "model": "book.book",
+    "pk": 1,
+    "fields": {
+      "name": "1984",
+      "description": "A dystopian novel by English novelist George Orwell. It was published in June 1949 by Secker & Warburg as Orwell's ninth and final book completed in his lifetime.",
+      "count": 7
+    }
+  },
+  {
+    "model": "book.book",
+    "pk": 2,
+    "fields": {
+      "name": "Animal Farm",
+      "description": "An allegorical novella by George Orwell, first published in England on 17 August 1945. The book tells the story of a group of farm animals who rebel against their human farmer, hoping to create a society where the animals can be equal, free, and happy.",
+      "count": 5
+    }
+  },
+  {
+    "model": "book.book",
+    "pk": 3,
+    "fields": {
+      "name": "The Lord of the Rings",
+      "description": "An epic high-fantasy novel by English author and scholar J. R. R. Tolkien. Set in Middle-earth, the world at some distant time in the past, the story began as a sequel to Tolkien's 1937 children's book The Hobbit, but eventually developed into a much larger work.",
+      "count": 3
+    }
+  },
+  {
+    "model": "book.book",
+    "pk": 4,
+    "fields": {
+      "name": "The Hobbit",
+      "description": "A children's fantasy novel by English author J. R. R. Tolkien. It was published on 21 September 1937 to wide critical acclaim, being nominated for the Carnegie Medal and awarded a prize from the New York Herald Tribune for best juvenile fiction.",
+      "count": 6
+    }
+  },
+  {
+    "model": "book.book",
+    "pk": 5,
+    "fields": {
+      "name": "To Kill a Mockingbird",
+      "description": "A novel by Harper Lee published in 1960. Instantly successful, widely read in high schools and middle schools in the United States, it has become a classic of modern American literature, winning the Pulitzer Prize.",
+      "count": 4
+    }
+  },
+  {
+    "model": "book.book",
+    "pk": 6,
+    "fields": {
+      "name": "The Great Gatsby",
+      "description": "A 1925 novel by American writer F. Scott Fitzgerald. Set in the Jazz Age on Long Island, the novel depicts narrator Nick Carraway's interactions with mysterious millionaire Jay Gatsby and Gatsby's obsession to reunite with his former lover, Daisy Buchanan.",
+      "count": 5
+    }
+  },
+  {
+    "model": "book.book",
+    "pk": 7,
+    "fields": {
+      "name": "The Silmarillion",
+      "description": "A collection of mythopoeic works by English writer J. R. R. Tolkien, edited and published posthumously by his son, Christopher Tolkien, in 1977, with assistance from fantasy fiction writer Guy Gavriel Kay.",
+      "count": 2
+    }
+  }
+]

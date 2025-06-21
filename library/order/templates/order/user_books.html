@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ target_user.get_full_name|default:target_user.email }}'s Books - Library{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'book:book_list' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'order:all_orders' %}">All Orders</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ target_user.get_full_name|default:target_user.email }}'s Books</li>
+                </ol>
+            </nav>
+            <h2>{{ target_user.get_full_name|default:target_user.email }}'s Books</h2>
+            <p class="text-muted">All books borrowed by this user</p>
+        </div>
+    </div>
+
+    {% if user_orders %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Book</th>
+                        <th>Borrowed On</th>
+                        <th>Due Date</th>
+                        <th>Returned On</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in user_orders %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'book:book_detail' order.book.id %}" class="text-decoration-none">
+                                    {{ order.book.name }}
+                                </a>
+                                <div class="text-muted small">By {{ order.book.authors.all|join:", "|default:"Unknown Author" }}</div>
+                            </td>
+                            <td>{{ order.created_at|date:"M d, Y" }}</td>
+                            <td>{{ order.plated_end_at|date:"M d, Y" }}</td>
+                            <td>{% if order.end_at %}{{ order.end_at|date:"M d, Y" }}{% else %}—{% endif %}</td>
+                            <td>
+                                {% if order.end_at %}
+                                    <span class="badge bg-secondary">Returned</span>
+                                {% else %}
+                                    <span class="badge bg-{% if order.is_overdue %}danger{% else %}success{% endif %}">
+                                        {% if order.is_overdue %}Overdue{% else %}Borrowed{% endif %}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            This user hasn't borrowed any books yet.
+        </div>
+    {% endif %}
+    
+    <div class="mt-4">
+        <a href="{% url 'order:all_orders' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to All Orders
+        </a>
+    </div>
+</div>
+{% endblock %}
