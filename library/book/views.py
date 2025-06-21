@@ -21,11 +21,36 @@ class BookCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Add New Book'
+        context['submit_btn'] = 'Add Book'
         return context
     
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method in ('POST', 'PUT'):
+            kwargs['data'] = self.request.POST.copy()
+        return kwargs
+    
     def form_valid(self, form):
-        messages.success(self.request, 'Book added successfully!')
+        # Save the form to get the book instance
+        self.object = form.save(commit=False)
+        
+        # Save the book instance
+        self.object.save()
+        
+        # Save many-to-many relationships
+        form.save_m2m()
+        
+        # Get the authors from the form
+        authors = form.cleaned_data.get('authors', [])
+        if authors:
+            self.object.authors.set(authors)
+        
+        messages.success(self.request, f'Book "{self.object.name}" was added successfully!')
         return super().form_valid(form)
+        
+    def form_invalid(self, form):
+        messages.error(self.request, 'Please correct the errors below.')
+        return super().form_invalid(form)
 
 class BookUpdateView(UpdateView):
     model = Book
@@ -38,11 +63,22 @@ class BookUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = f'Edit {self.object.name}'
+        context['submit_btn'] = 'Update Book'
         return context
     
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['instance'] = self.get_object()
+        return kwargs
+    
     def form_valid(self, form):
-        messages.success(self.request, 'Book updated successfully!')
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        messages.success(self.request, f'Book "{self.object.name}" was updated successfully!')
+        return response
+        
+    def form_invalid(self, form):
+        messages.error(self.request, 'Please correct the errors below.')
+        return super().form_invalid(form)
 
 
 def book_list(request):

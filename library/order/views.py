@@ -29,13 +29,13 @@ def create_order(request):
 
             order = form.save(commit=False)
             order.user = request.user
-            order.planned_end_at = timezone.now() + timedelta(days=14)
+            order.plated_end_at = timezone.now() + timedelta(days=14)
             order.save()
 
             book.count -= 1
             book.save()
 
-            messages.success(request, f'You have successfully borrowed "{book.name}". Please return it by {order.planned_end_at.strftime("%B %d, %Y")}.')
+            messages.success(request, f'You have successfully borrowed "{book.name}". Please return it by {order.plated_end_at.strftime("%B %d, %Y")}.')
             return redirect('order:my_orders')
     else:
         form = OrderForm()

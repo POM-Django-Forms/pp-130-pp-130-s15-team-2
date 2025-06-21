@@ -1,65 +1,112 @@
 {% extends 'base.html' %}
+{% load i18n %}
 
-{% block title %}My Profile - Library{% endblock %}
+{% block title %}{% trans 'My Profile' %} - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h1 class="h4 mb-0">My Profile</h1>
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h1 class="h4 mb-0">
+                            <i class="bi bi-person-circle me-2"></i>{% trans 'My Profile' %}
+                        </h1>
+                        <div>
+                            <span class="badge {% if user.is_librarian %}bg-info{% else %}bg-secondary{% endif %}">
+                                {{ user.get_role_display }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     {% if messages %}
                         {% for message in messages %}
                             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                                 {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'Close' %}"></button>
                             </div>
                         {% endfor %}
                     {% endif %}
 
-                    <div class="row mb-4">
-                        <div class="col-md-4 text-center">
-                            <div class="mb-3">
-                                <div class="position-relative d-inline-block">
-                                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
-                                        <i class="bi bi-person-circle" style="font-size: 5rem; color: #6c757d;"></i>
-                                    </div>
+                    <div class="row align-items-center mb-4">
+                        <div class="col-md-4 text-center mb-3 mb-md-0">
+                            <div class="position-relative d-inline-block">
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 120px; height: 120px; border: 3px solid #e9ecef;">
+                                    <i class="bi bi-person-circle" style="font-size: 5rem; color: #6c757d;"></i>
                                 </div>
                             </div>
-                            <h5 class="mb-1">{{ user.get_full_name|default:user.email }}</h5>
-                            <p class="text-muted mb-0">
-                                {% if user.is_librarian %}
-                                    <span class="badge bg-info">Librarian</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Member</span>
-                                {% endif %}
-                            </p>
                         </div>
                         <div class="col-md-8">
-                            <div class="mb-3">
-                                <label class="form-label text-muted mb-1">Email</label>
-                                <p class="mb-2">{{ user.email }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted mb-1">Name</label>
-                                <p class="mb-2">{{ user.get_full_name|default:"Not provided" }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted mb-1">Account Created</label>
-                                <p class="mb-2">{{ user.date_joined|date:"F j, Y" }}</p>
+                            <h2 class="h4 mb-2">{{ user.get_full_name|default:user.email }}</h2>
+                            <p class="text-muted mb-3">
+                                <i class="bi bi-envelope me-2"></i>{{ user.email }}
+                            </p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                                    <i class="bi bi-pencil-square me-1"></i>{% trans 'Edit Profile' %}
+                                </button>
+                                <a href="{% url 'authentication:password_change' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-key me-1"></i>{% trans 'Change Password' %}
+                                </a>
                             </div>
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h3 class="h6 mb-0">{% trans 'Account Information' %}</h3>
+                                </div>
+                                <div class="card-body">
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-5">{% trans 'Member since' %}:</dt>
+                                        <dd class="col-sm-7">{{ user.date_joined|date:"F j, Y" }}</dd>
+                                        
+                                        <dt class="col-sm-5">{% trans 'Last login' %}:</dt>
+                                        <dd class="col-sm-7">{{ user.last_login|default:"Never"|date:"F j, Y H:i" }}</dd>
+                                        
+                                        <dt class="col-sm-5">{% trans 'Status' %}:</dt>
+                                        <dd class="col-sm-7">
+                                            <span class="badge {% if user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                                {% if user.is_active %}{% trans 'Active' %}{% else %}{% trans 'Inactive' %}{% endif %}
+                                            </span>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h3 class="h6 mb-0">{% trans 'Contact Information' %}</h3>
+                                </div>
+                                <div class="card-body">
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-5">{% trans 'Email' %}:</dt>
+                                        <dd class="col-sm-7">{{ user.email }}</dd>
+                                        
+                                        <dt class="col-sm-5">{% trans 'Full Name' %}:</dt>
+                                        <dd class="col-sm-7">{{ user.get_full_name|default:"-" }}</dd>
+                                        
+                                        {% if user.middle_name %}
+                                        <dt class="col-sm-5">{% trans 'Middle Name' %}:</dt>
+                                        <dd class="col-sm-7">{{ user.middle_name }}</dd>
+                                        {% endif %}
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top">
                         <a href="{% url 'book:book_list' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> Back to Home
-                        </a>
-                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
-                            <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                            <i class="bi bi-arrow-left me-1"></i> {% trans 'Back to Home' %}
                         </a>
                     </div>
                 </div>
@@ -73,29 +120,61 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="editProfileModalLabel">
+                    <i class="bi bi-pencil-square me-2"></i>{% trans 'Edit Profile' %}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
             </div>
-            <form method="post" action="{% url 'authentication:profile' %}">
-                {% csrf_token %}
+            <form method="post" action="{% url 'authentication:profile' %}" novalidate>
                 <div class="modal-body">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
                     <div class="mb-3">
-                        <label for="first_name" class="form-label">First Name</label>
-                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                            {{ form.first_name.label }}
+                        </label>
+                        {{ form.first_name }}
+                        {% for error in form.first_name.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="last_name" class="form-label">Last Name</label>
-                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                            {{ form.last_name.label }}
+                        </label>
+                        {{ form.last_name }}
+                        {% for error in form.last_name.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
                     </div>
+                    
+                    {% if form.middle_name %}
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email address</label>
-                        <input type="email" class="form-control" id="email" value="{{ user.email }}" readonly>
-                        <div class="form-text">Contact support to change your email address.</div>
+                        <label for="{{ form.middle_name.id_for_label }}" class="form-label">
+                            {{ form.middle_name.label }}
+                        </label>
+                        {{ form.middle_name }}
+                        {% for error in form.middle_name.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
                     </div>
+                    {% endif %}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save changes</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>{% trans 'Cancel' %}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>{% trans 'Save Changes' %}
+                    </button>
                 </div>
             </form>
         </div>
