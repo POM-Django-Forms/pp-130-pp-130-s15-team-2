@@ -18,7 +18,7 @@
                             <p class="card-text text-muted">
                                 Borrowed by: {{ order.user.email }}<br>
                                 Borrowed on: {{ order.created_at|date:"M d, Y" }}<br>
-                                Due date: {{ order.plated_end_at|date:"M d, Y" }}
+                                Due date: {{ order.planned_end_at|date:"M d, Y" }}
                             </p>
                             {% if order.plated_end_at < timezone.now %}
                                 <div class="alert alert-warning">

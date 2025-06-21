@@ -25,16 +25,7 @@ class Migration(migrations.Migration):
             field=models.DateTimeField(auto_now_add=True, default=django.utils.timezone.now, verbose_name='date joined'),
             preserve_default=False,
         ),
-        migrations.AddField(
-            model_name='customuser',
-            name='is_staff',
-            field=models.BooleanField(default=False, verbose_name='staff status'),
-        ),
-        migrations.AddField(
-            model_name='customuser',
-            name='is_superuser',
-            field=models.BooleanField(default=False, verbose_name='superuser status'),
-        ),
+        
         migrations.AlterField(
             model_name='customuser',
             name='email',

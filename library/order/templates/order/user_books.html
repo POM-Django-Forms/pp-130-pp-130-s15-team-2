@@ -40,7 +40,7 @@
                                 <div class="text-muted small">By {{ order.book.authors.all|join:", "|default:"Unknown Author" }}</div>
                             </td>
                             <td>{{ order.created_at|date:"M d, Y" }}</td>
-                            <td>{{ order.plated_end_at|date:"M d, Y" }}</td>
+                            <td>{{ order.planed_end_at|date:"M d, Y" }}</td>
                             <td>{% if order.end_at %}{{ order.end_at|date:"M d, Y" }}{% else %}—{% endif %}</td>
                             <td>
                                 {% if order.end_at %}

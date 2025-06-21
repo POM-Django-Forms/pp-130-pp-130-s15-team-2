@@ -166,4 +166,4 @@ class CustomUser(AbstractBaseUser):
         """
         returns str role name
         """
-        return ROLE_CHOICES[self.role][1]
+        return self.ROLE_CHOICES[self.role][1]

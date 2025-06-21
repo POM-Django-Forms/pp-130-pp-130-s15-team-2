@@ -54,7 +54,7 @@
                             </td>
                             <td>{{ order.created_at|date:"M d, Y" }}</td>
                             <td>
-                                <span class="{% if order.plated_end_at < timezone.now and not order.end_at %}text-danger fw-bold{% endif %}">
+                                <span class="{% if order.planned_end_at < timezone.now and not order.end_at %}text-danger fw-bold{% endif %}">
                                     {{ order.plated_end_at|date:"M d, Y" }}
                                     {% if order.plated_end_at < timezone.now and not order.end_at %}(Overdue){% endif %}
                                 </span>

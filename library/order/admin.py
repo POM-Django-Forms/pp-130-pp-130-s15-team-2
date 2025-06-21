@@ -4,8 +4,8 @@ from django.utils import timezone
 from django.utils.html import format_html
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'book_info', 'user_info', 'created_at', 'end_at', 'plated_end_at', 'is_overdue')
-    list_filter = ('created_at', 'end_at', 'plated_end_at')
+    list_display = ('id', 'book_info', 'user_info', 'created_at', 'end_at', 'planned_end_at', 'is_overdue')
+    list_filter = ('created_at', 'end_at', 'planned_end_at')
     search_fields = ('book__name', 'user__email')
     date_hierarchy = 'created_at'
     readonly_fields = ('created_at', 'get_status')
@@ -15,7 +15,7 @@ class OrderAdmin(admin.ModelAdmin):
             'fields': ('book', 'user', 'created_at')
         }),
         ('Return Information', {
-            'fields': ('end_at', 'plated_end_at', 'get_status'),
+            'fields': ('end_at', 'planned_end_at', 'get_status'),
             'classes': ('collapse',)
         }),
     )
@@ -31,7 +31,7 @@ class OrderAdmin(admin.ModelAdmin):
     def get_status(self, obj):
         if obj.end_at:
             return 'Returned'
-        if obj.plated_end_at and obj.plated_end_at < timezone.now():
+        if obj.planned_end_at and obj.planned_end_at < timezone.now():
             return format_html('<span style="color: red;">Overdue</span>')
         return 'On time'
     get_status.short_description = 'Status'
